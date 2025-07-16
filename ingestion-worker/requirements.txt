@@ -3,6 +3,7 @@ requests
 schedule
 python-dotenv
 newsapi-python
+pinecone-client
 
 # Testing dependencies
 pytest

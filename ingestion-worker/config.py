@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -9,10 +10,16 @@ class Config:
     
     # API Keys
     NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
     
- 
+    # Pinecone Configuration
+    PINECONE_HOST = os.getenv('PINECONE_HOST', '')
+    PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME', '')
+    PINECONE_NAMESPACE = os.getenv('PINECONE_NAMESPACE', '')
+    
+    # News API Configuration
     NEWS_LANGUAGE = 'en'
-    NEWS_FROM_DATE = '2025-07-14'
+    NEWS_FROM_DATE = datetime.now().strftime('%Y-%m-%d')
     NEWS_SORT_BY = 'publishedAt'
     
     
@@ -20,7 +27,8 @@ class Config:
     def validate_config(cls):
         """Validate that all required configuration is present"""
         required_vars = [
-            'NEWS_API_KEY'
+            'NEWS_API_KEY',
+            'PINECONE_API_KEY'
         ]
         
         missing_vars = []

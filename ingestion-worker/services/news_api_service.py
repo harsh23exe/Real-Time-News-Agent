@@ -1,6 +1,7 @@
 from newsapi import NewsApiClient
 from typing import List, Dict, Any, Optional
 from config import Config
+from utils.logger import logger
 
 class NewsAPIService:
     """Service class to handle News API operations using the newsapi-python library"""
@@ -20,14 +21,14 @@ class NewsAPIService:
             )
             if articles.get('status') == 'ok':
                 article_list = articles.get('articles', [])
-                print(f"Fetched {len(article_list)} articles for topic: {topic}")
+                logger.info(f"Fetched {len(article_list)} articles for topic: {topic}")
                 return article_list
             else:
-                print(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
+                logger.error(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
                 return []
                 
         except Exception as e:
-            print(f"Error fetching news: {e}")
+            logger.error(f"Error fetching news: {e}")
             return []
     
     def fetch_news_by_domain(self, domain: str, from_date: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -42,14 +43,14 @@ class NewsAPIService:
             
             if articles.get('status') == 'ok':
                 article_list = articles.get('articles', [])
-                print(f"Fetched {len(article_list)} articles from domain: {domain}")
+                logger.info(f"Fetched {len(article_list)} articles from domain: {domain}")
                 return article_list
             else:
-                print(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
+                logger.error(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
                 return []
                 
         except Exception as e:
-            print(f"Error fetching news from domain: {e}")
+            logger.error(f"Error fetching news from domain: {e}")
             return []
     
     def fetch_top_headlines(self, country: str = 'us', category: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -65,14 +66,14 @@ class NewsAPIService:
             
             if articles.get('status') == 'ok':
                 article_list = articles.get('articles', [])
-                print(f"Fetched {len(article_list)} top headlines for country: {country}")
+                logger.info(f"Fetched {len(article_list)} top headlines for country: {country}")
                 return article_list
             else:
-                print(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
+                logger.error(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
                 return []
                 
         except Exception as e:
-            print(f"Error fetching top headlines: {e}")
+            logger.error(f"Error fetching top headlines: {e}")
             return []
     
     def search_articles(self, query: str, from_date: Optional[str] = None, 
@@ -89,14 +90,14 @@ class NewsAPIService:
             
             if articles.get('status') == 'ok':
                 article_list = articles.get('articles', [])
-                print(f"Found {len(article_list)} articles for query: {query}")
+                logger.info(f"Found {len(article_list)} articles for query: {query}")
                 return article_list
             else:
-                print(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
+                logger.error(f"NewsAPI error: {articles.get('message', 'Unknown error')}")
                 return []
                 
         except Exception as e:
-            print(f"Error searching articles: {e}")
+            logger.error(f"Error searching articles: {e}")
             return []
     
     def get_api_status(self) -> Dict[str, Any]:
