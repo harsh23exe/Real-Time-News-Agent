@@ -18,6 +18,10 @@ The `NewsPipeline` class orchestrates the entire process of:
 - **Batch Processing**: Process multiple topics efficiently
 - **Status Monitoring**: Check pipeline and service status
 
+## NewsAPI Date Constraint
+
+> **Note:** NewsAPI only allows retrieving news from previous days (not the current day). The pipeline does not support a `from_date` parameter and always fetches the most recent available news.
+
 ## Configuration
 
 Before running the pipeline, ensure you have the following environment variables set:
@@ -51,9 +55,6 @@ python run_pipeline.py --mode domain --domain "techcrunch.com"
 
 # Process multiple topics in batch
 python run_pipeline.py --mode batch --topics "climate change" "renewable energy" "electric vehicles"
-
-# With date filtering
-python run_pipeline.py --mode topic --topics "AI" --from-date "2024-01-01"
 ```
 
 ### Programmatic Usage
@@ -67,7 +68,6 @@ pipeline = NewsPipeline()
 # Process a single topic
 result = pipeline.process_news_topic(
     topic="artificial intelligence",
-    from_date="2024-01-01",
     language="en",
     sort_by="publishedAt"
 )
@@ -80,15 +80,13 @@ result = pipeline.process_top_headlines(
 
 # Process domain-specific news
 result = pipeline.process_domain_news(
-    domain="techcrunch.com",
-    from_date="2024-01-01"
+    domain="techcrunch.com"
 )
 
 # Batch process multiple topics
 topics = ["climate change", "renewable energy", "electric vehicles"]
 result = pipeline.batch_process_topics(
-    topics=topics,
-    from_date="2024-01-01"
+    topics=topics
 )
 
 # Check pipeline status
@@ -106,7 +104,6 @@ Fetches news articles based on specific topics or keywords.
 ```python
 result = pipeline.process_news_topic(
     topic="artificial intelligence",
-    from_date="2024-01-01",
     language="en",
     sort_by="publishedAt"
 )
@@ -127,8 +124,7 @@ Fetches news from specific domains or news sources.
 
 ```python
 result = pipeline.process_domain_news(
-    domain="techcrunch.com",
-    from_date="2024-01-01"
+    domain="techcrunch.com"
 )
 ```
 
@@ -138,8 +134,7 @@ Process multiple topics efficiently in a single pipeline run.
 ```python
 topics = ["AI", "machine learning", "deep learning"]
 result = pipeline.batch_process_topics(
-    topics=topics,
-    from_date="2024-01-01"
+    topics=topics
 )
 ```
 

@@ -9,14 +9,12 @@ class NewsAPIService:
     def __init__(self):
         self.client = NewsApiClient(api_key=Config.NEWS_API_KEY)
     
-    def fetch_news(self, topic: str, from_date: Optional[str] = None, 
-                   language: Optional[str] = None, sort_by: Optional[str] = None) -> List[Dict[str, Any]]:
+    def fetch_news(self, topic: str, language: Optional[str] = None, sort_by: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetch news articles for a given topic from NewsAPI"""
         try:
             articles = self.client.get_everything(
                 q=topic,
                 language=language or Config.NEWS_LANGUAGE,
-                from_param=from_date or Config.NEWS_FROM_DATE,
                 sort_by=sort_by or Config.NEWS_SORT_BY
             )
             if articles.get('status') == 'ok':
@@ -31,13 +29,12 @@ class NewsAPIService:
             logger.error(f"Error fetching news: {e}")
             return []
     
-    def fetch_news_by_domain(self, domain: str, from_date: Optional[str] = None) -> List[Dict[str, Any]]:
+    def fetch_news_by_domain(self, domain: str) -> List[Dict[str, Any]]:
         """Fetch news articles from a specific domain"""
         try:
             articles = self.client.get_everything(
                 domains=domain,
                 language=Config.NEWS_LANGUAGE,
-                from_param=from_date or Config.NEWS_FROM_DATE,
                 sort_by=Config.NEWS_SORT_BY
             )
             
@@ -76,14 +73,12 @@ class NewsAPIService:
             logger.error(f"Error fetching top headlines: {e}")
             return []
     
-    def search_articles(self, query: str, from_date: Optional[str] = None, 
-                       to_date: Optional[str] = None, language: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_articles(self, query: str, to_date: Optional[str] = None, language: Optional[str] = None) -> List[Dict[str, Any]]:
         """Search for articles with specific criteria"""
         try:
             articles = self.client.get_everything(
                 q=query,
                 language=language or Config.NEWS_LANGUAGE,
-                from_param=from_date or Config.NEWS_FROM_DATE,
                 to=to_date,
                 sort_by=Config.NEWS_SORT_BY
             )

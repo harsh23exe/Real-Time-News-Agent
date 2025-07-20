@@ -69,39 +69,61 @@ class PineconeService:
     
     def upsert_texts_batch(self, texts: List[str], metadata_list: Optional[List[Dict[str, Any]]] = None,
                           record_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Upsert multiple texts in batch"""
+        """Upsert multiple texts in batch with proper chunking for Pinecone limits"""
         try:
             if not texts:
                 return {'success': False, 'error': 'No texts provided'}
             
-            # Prepare records
-            records = []
-            for i, text in enumerate(texts):
-                # Generate record ID if not provided
-                record_id = record_ids[i] if record_ids and i < len(record_ids) else str(uuid.uuid4())
-                
-                # Prepare metadata
-                metadata = metadata_list[i] if metadata_list and i < len(metadata_list) else {}
-                metadata['text_length'] = len(text)
-                
-                record = {
-                    "_id": record_id,
-                    "text": text,
-                    **metadata
-                }
-                records.append(record)
+            # Pinecone batch size limit
+            BATCH_SIZE_LIMIT = 96
             
-            # Upsert batch to Pinecone
-            self.index.upsert_records(
-                namespace=self.namespace,
-                records=records
-            )
+            total_successful = 0
+            total_failed = 0
             
-            logger.info(f"Successfully upserted {len(texts)} texts in batch")
+            # Process in chunks
+            for i in range(0, len(texts), BATCH_SIZE_LIMIT):
+                chunk_texts = texts[i:i + BATCH_SIZE_LIMIT]
+                chunk_metadata = metadata_list[i:i + BATCH_SIZE_LIMIT] if metadata_list else None
+                chunk_record_ids = record_ids[i:i + BATCH_SIZE_LIMIT] if record_ids else None
+                
+                try:
+                    # Prepare records for this chunk
+                    records = []
+                    for j, text in enumerate(chunk_texts):
+                        # Generate record ID if not provided
+                        record_id = chunk_record_ids[j] if chunk_record_ids and j < len(chunk_record_ids) else str(uuid.uuid4())
+                        
+                        # Prepare metadata
+                        metadata = chunk_metadata[j] if chunk_metadata and j < len(chunk_metadata) else {}
+                        metadata['text_length'] = len(text)
+                        
+                        record = {
+                            "_id": record_id,
+                            "text": text,
+                            **metadata
+                        }
+                        records.append(record)
+                    
+                    # Upsert this chunk to Pinecone
+                    self.index.upsert_records(
+                        namespace=self.namespace,
+                        records=records
+                    )
+                    
+                    total_successful += len(chunk_texts)
+                    logger.info(f"Successfully upserted chunk {i//BATCH_SIZE_LIMIT + 1}: {len(chunk_texts)} texts")
+                    
+                except Exception as e:
+                    total_failed += len(chunk_texts)
+                    logger.error(f"Error upserting chunk {i//BATCH_SIZE_LIMIT + 1}: {e}")
+            
+            logger.info(f"Batch upsert completed: {total_successful} successful, {total_failed} failed")
             
             return {
-                'success': True,
-                'total_texts': len(texts)
+                'success': total_failed == 0,
+                'total_texts': len(texts),
+                'successful': total_successful,
+                'failed': total_failed
             }
             
         except Exception as e:

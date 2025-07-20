@@ -7,7 +7,6 @@ and upload to Pinecone database.
 
 import argparse
 import sys
-from datetime import datetime, timedelta
 from services.news_pipeline import NewsPipeline
 from utils.logger import logger
 
@@ -21,7 +20,6 @@ def main():
     parser.add_argument('--domain', help='Domain to process (for domain mode)')
     parser.add_argument('--country', default='us', help='Country for headlines (default: us)')
     parser.add_argument('--category', help='Category for headlines (optional)')
-    parser.add_argument('--from-date', help='From date (YYYY-MM-DD format)')
     parser.add_argument('--language', default='en', help='Language (default: en)')
     parser.add_argument('--sort-by', default='publishedAt', help='Sort by (default: publishedAt)')
     
@@ -47,7 +45,6 @@ def main():
             
             result = pipeline.process_news_topic(
                 topic=args.topics[0],
-                from_date=args.from_date,
                 language=args.language,
                 sort_by=args.sort_by
             )
@@ -64,8 +61,7 @@ def main():
                 return 1
             
             result = pipeline.process_domain_news(
-                domain=args.domain,
-                from_date=args.from_date
+                domain=args.domain
             )
             
         elif args.mode == 'batch':
@@ -74,8 +70,7 @@ def main():
                 return 1
             
             result = pipeline.batch_process_topics(
-                topics=args.topics,
-                from_date=args.from_date
+                topics=args.topics
             )
         
         # Print results
@@ -110,49 +105,9 @@ def main():
         return 1
 
 
-def run_example_pipeline():
-    """Run an example pipeline with predefined topics"""
-    try:
-        logger.info("Running example pipeline...")
-        
-        pipeline = NewsPipeline()
-        
-        # Example 1: Process a single topic
-        logger.info("Example 1: Processing 'artificial intelligence' topic")
-        result1 = pipeline.process_news_topic(
-            topic="artificial intelligence",
-            from_date=(datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-        )
-        print(f"Result 1: {result1}")
-        
-        # Example 2: Process top headlines
-        logger.info("Example 2: Processing top headlines")
-        result2 = pipeline.process_top_headlines(country='us', category='technology')
-        print(f"Result 2: {result2}")
-        
-        # Example 3: Process multiple topics in batch
-        logger.info("Example 3: Processing multiple topics in batch")
-        topics = ['climate change', 'renewable energy', 'electric vehicles']
-        result3 = pipeline.batch_process_topics(
-            topics=topics,
-            from_date=(datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d')
-        )
-        print(f"Result 3: {result3}")
-        
-        pipeline.close()
-        logger.info("Example pipeline completed")
-        
-    except Exception as e:
-        logger.error(f"Example pipeline failed: {e}")
-        return 1
-    
-    return 0
-
-
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        # No arguments provided, run example
-        sys.exit(run_example_pipeline())
+        print("Please provide arguments. Run with --help for usage.")
+        sys.exit(1)
     else:
-        # Run with provided arguments
         sys.exit(main()) 
