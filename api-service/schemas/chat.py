@@ -5,7 +5,7 @@ class UserMessage(BaseModel):
     type: str = "user_message"
     content: str
     chat_history: Optional[List[str]] = None
-    selected_news_article: str
+    selected_news_article: Optional[str] = None
 
 class BotResponse(BaseModel):
     type: str = "bot_response"

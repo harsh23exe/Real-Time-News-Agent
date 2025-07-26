@@ -5,6 +5,7 @@ class Config:
     PINECONE_HOST = os.getenv('PINECONE_HOST', '')
     PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME', '')
     PINECONE_NAMESPACE = os.getenv('PINECONE_NAMESPACE', '')
+    NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 
     @classmethod
     def validate_config(cls):

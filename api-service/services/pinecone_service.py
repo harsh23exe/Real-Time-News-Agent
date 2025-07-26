@@ -2,6 +2,13 @@ from pinecone import Pinecone
 from typing import List, Dict, Any, Optional
 from config import Config
 from utils.logger import logger
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+# Always load .env from the project root
+env_path = Path(__file__).resolve().parents[1] / '.env'
+load_dotenv(dotenv_path=env_path)
 
 class PineconeService:
     def __init__(self):

@@ -1,5 +1,12 @@
+from dotenv import load_dotenv
+import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Always load .env from the project root
+env_path = Path(__file__).resolve().parents[1] / '.env'
+load_dotenv(dotenv_path=env_path)
 
 app = FastAPI(title="Real-Time News Agent API", version="1.0")
 

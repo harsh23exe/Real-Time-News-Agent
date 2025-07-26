@@ -9,6 +9,13 @@ import argparse
 import sys
 from services.news_pipeline import NewsPipeline
 from utils.logger import logger
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+# Always load .env from the project root
+env_path = Path(__file__).resolve().parents[1] / '.env'
+load_dotenv(dotenv_path=env_path)
 
 
 def main():
