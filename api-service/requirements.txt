@@ -1,4 +1,7 @@
 fastapi
 uvicorn
 websockets
-python-dotenv 
+python-dotenv
+httpx  # For TestClient in testing
+newsapi-python
+pinecone-client 
