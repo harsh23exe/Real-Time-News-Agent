@@ -1,46 +1,48 @@
 import os
-import requests
+import google.genai as genai
 from typing import List
 
 class GeminiService:
     def __init__(self, api_key: str = None, model: str = None):
         self.api_key = api_key or os.getenv('GEMINI_API_KEY')
         self.model = model or 'gemini-2.5-flash-lite-preview-06-17'
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        
+        # Configure the Google Generative AI client
+        # genai.configure(api_key=self.api_key)
+        self.client = genai.Client(api_key=self.api_key)
 
     def count_tokens(self, text: str) -> int:
         # TODO: Implement accurate token counting for Gemini (placeholder: 1 token per 4 chars)
         return len(text) // 4
 
-    def build_prompt(self, chat_history: List[str], selected_article: str, similar_articles: List[str], token_limit: int = 1000000) -> str:
+    def build_prompt(self, chat_history: List[str], selected_article: str, similar_articles: List[str], user_message: str = None, token_limit: int = 1000000) -> str:
         # Assemble prompt, trimming similar_articles if needed
         prompt = ""
         if chat_history:
             prompt += "Chat history:\n" + "\n".join(chat_history) + "\n"
-        prompt += "Selected article:\n" + selected_article + "\n"
+        if selected_article:
+            prompt += "Selected article:\n" + selected_article + "\n"
         if similar_articles:
             prompt += "Similar articles:\n" + "\n".join(similar_articles) + "\n"
+        if user_message:
+            prompt += "User message:\n" + user_message + "\n"
         # Trim if over token limit
         while self.count_tokens(prompt) > token_limit and similar_articles:
             similar_articles.pop()
             prompt = ""
             if chat_history:
                 prompt += "Chat history:\n" + "\n".join(chat_history) + "\n"
-            prompt += "Selected article:\n" + selected_article + "\n"
+            if selected_article:
+                prompt += "Selected article:\n" + selected_article + "\n"
             if similar_articles:
                 prompt += "Similar articles:\n" + "\n".join(similar_articles) + "\n"
+            if user_message:
+                prompt += "User message:\n" + user_message + "\n"
         return prompt
 
     def generate_response(self, prompt: str) -> str:
-        headers = {"Content-Type": "application/json"}
-        params = {"key": self.api_key}
-        data = {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}]
-        }
-        response = requests.post(self.api_url, headers=headers, params=params, json=data)
-        if response.status_code == 200:
-            result = response.json()
-            # Parse Gemini response (adjust as needed for actual API response structure)
-            return result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-        else:
-            raise Exception(f"Gemini API error: {response.status_code} {response.text}") 
+        try:
+            response = self.client.models.generate_content(model=self.model, contents=prompt)
+            return response.text
+        except Exception as e:
+            raise Exception(f"Gemini API error: {str(e)}") 
