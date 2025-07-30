@@ -6,9 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from middleware.request_logging import RequestLoggingMiddleware
 from utils.logger import logger
 
-# Always load .env from the project root
-env_path = Path(__file__).resolve().parents[1] / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 app = FastAPI(title="Real-Time News Agent API", version="1.0")
 
@@ -27,13 +25,13 @@ app.add_middleware(
 # Startup event
 @app.on_event("startup")
 async def startup_event():
-    logger.info("🎉 Real-Time News Agent API started successfully!")
-    logger.info("📊 Request logging middleware is active")
+    logger.info("Real-Time News Agent API started successfully!")
+    logger.info("Request logging middleware is active")
 
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_event():
-    logger.info("🛑 Real-Time News Agent API is shutting down...")
+    logger.info("Real-Time News Agent API is shutting down...")
 
 # Import and include routers (to be created)
 from routes.news import news_router
