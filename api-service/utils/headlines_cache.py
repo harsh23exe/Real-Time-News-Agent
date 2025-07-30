@@ -10,8 +10,29 @@ class HeadlinesCache:
     
     def __init__(self, cache_dir: str = "cache"):
         self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(exist_ok=True)
         self.cache_file = self.cache_dir / "headlines_cache.json"
+        
+        # Try to create cache directory and test write permissions, fall back to in-memory if not possible
+        try:
+            self.cache_dir.mkdir(exist_ok=True)
+            
+            # Test if we can actually write to the directory
+            test_file = self.cache_dir / "test_write.tmp"
+            try:
+                with open(test_file, 'w') as f:
+                    f.write("test")
+                test_file.unlink()  # Clean up test file
+                self.use_file_cache = True
+                logger.info("Using file-based cache")
+            except (OSError, PermissionError):
+                self.use_file_cache = False
+                self.memory_cache = {}
+                logger.info("Using in-memory cache (serverless environment detected)")
+                
+        except (OSError, PermissionError):
+            self.use_file_cache = False
+            self.memory_cache = {}
+            logger.info("Using in-memory cache (serverless environment detected)")
     
     def get_cache_filename(self, country: str, category: Optional[str] = None) -> str:
         """Generate cache filename based on country and category"""
@@ -20,8 +41,20 @@ class HeadlinesCache:
             return f"headlines_{country}_{category}_{today}.json"
         return f"headlines_{country}_{today}.json"
     
+    def get_cache_key(self, country: str, category: Optional[str] = None) -> str:
+        """Generate cache key for in-memory storage"""
+        today = date.today().isoformat()
+        if category:
+            return f"{country}_{category}_{today}"
+        return f"{country}_{today}"
+    
     def is_cache_valid(self, country: str, category: Optional[str] = None) -> bool:
         """Check if cached headlines exist for today"""
+        if not self.use_file_cache:
+            # Check in-memory cache
+            cache_key = self.get_cache_key(country, category)
+            return cache_key in self.memory_cache
+        
         cache_file = self.cache_dir / self.get_cache_filename(country, category)
         if not cache_file.exists():
             return False
@@ -43,6 +76,14 @@ class HeadlinesCache:
         if not self.is_cache_valid(country, category):
             return None
         
+        if not self.use_file_cache:
+            # Get from in-memory cache
+            cache_key = self.get_cache_key(country, category)
+            cache_data = self.memory_cache.get(cache_key, {})
+            headlines = cache_data.get('headlines', [])
+            logger.info(f"Retrieved {len(headlines)} headlines from memory cache")
+            return headlines
+        
         cache_file = self.cache_dir / self.get_cache_filename(country, category)
         
         try:
@@ -58,8 +99,6 @@ class HeadlinesCache:
     
     def save_headlines(self, headlines: List[Dict[str, Any]], country: str, category: Optional[str] = None) -> bool:
         """Save headlines to cache with today's date"""
-        cache_file = self.cache_dir / self.get_cache_filename(country, category)
-        
         cache_data = {
             'date': date.today().isoformat(),
             'timestamp': datetime.now().isoformat(),
@@ -67,6 +106,16 @@ class HeadlinesCache:
             'category': category,
             'headlines': headlines
         }
+        
+        if not self.use_file_cache:
+            # Save to in-memory cache
+            cache_key = self.get_cache_key(country, category)
+            self.memory_cache[cache_key] = cache_data
+            logger.info(f"Cached {len(headlines)} headlines in memory for {country}" + 
+                       (f"/{category}" if category else ""))
+            return True
+        
+        cache_file = self.cache_dir / self.get_cache_filename(country, category)
         
         try:
             with open(cache_file, 'w') as f:
@@ -78,10 +127,31 @@ class HeadlinesCache:
         
         except Exception as e:
             logger.error(f"Error saving headlines to cache: {e}")
-            return False
+            # If file write fails, fall back to in-memory cache
+            self.use_file_cache = False
+            self.memory_cache = {}
+            cache_key = self.get_cache_key(country, category)
+            self.memory_cache[cache_key] = cache_data
+            logger.info(f"Fell back to in-memory cache for {country}" + 
+                       (f"/{category}" if category else ""))
+            return True
     
     def clear_old_cache(self):
         """Remove cache files older than today"""
+        if not self.use_file_cache:
+            # Clear old in-memory cache entries
+            today = date.today().isoformat()
+            keys_to_remove = []
+            
+            for key in self.memory_cache.keys():
+                if today not in key:
+                    keys_to_remove.append(key)
+            
+            for key in keys_to_remove:
+                del self.memory_cache[key]
+                logger.info(f"Removed old memory cache entry: {key}")
+            return
+        
         today = date.today().isoformat()
         
         try:
