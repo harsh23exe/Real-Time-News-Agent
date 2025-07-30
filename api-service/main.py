@@ -38,7 +38,7 @@ from routes.news import news_router
 from routes.chat import chat_router
 
 app.include_router(news_router, prefix="/api/v1/news", tags=["news"])
-app.include_router(chat_router, prefix="/ws", tags=["chat"])
+app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
 
 # Health check endpoint
 @app.get("/health")
