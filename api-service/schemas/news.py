@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 
 class NewsSearchRequest(BaseModel):
     query: str
-    limit: Optional[int] = 10
+    limit: Optional[int] = 15
 
 class NewsArticle(BaseModel):
     id: str  # Pinecone record ID

@@ -15,7 +15,7 @@ async def chat_endpoint(user_message: UserMessage):
         if selected_article:
             # 1. Use Pinecone to find 10 similar articles to selected_article
             pinecone = PineconeService()
-            pinecone_result = pinecone.search_similar(query_text=selected_article, top_k=10)
+            pinecone_result = pinecone.search_similar(query_text=selected_article, top_k=20)
             for match in pinecone_result.get('matches', []):
                 meta = match.get('metadata', {})
                 # Use the 'text' field if available, else join title/summary

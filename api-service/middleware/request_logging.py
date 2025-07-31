@@ -27,7 +27,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         query_params = dict(request.query_params) if request.query_params else {}
         
         # Log incoming request
-        logger.info(f"🚀 {method} {path} - Client: {client_host}")
+        logger.info(f" {method} {path} - Client: {client_host}")
         
         # Process the request
         try:

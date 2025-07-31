@@ -1,127 +1,175 @@
-# Real-Time-News-Agent: Backend Service
+# Real-Time News Agent - Backend Service
 
-In a world where news breaks and evolves rapidly, staying informed in real time is crucial. The Real-Time-News-Agent backend service is designed to autonomously monitor news APIs, aggregate and index articles, and provide users with instant, summarized, and context-aware responses to their queries about developing events. This empowers users, organizations, and applications to access up-to-date, relevant news insights with minimal latency and maximum accuracy.
+A  *backend* service that powers an intelligent news agent capable of real-time news monitoring, semantic search, and AI-powered conversations. This backend provides REST APIs for seamless integration with frontend applications.
 
-## What
+Visit: https://techpulse-nu.vercel.app/
 
-This backend service is built with FastAPI and serves as the core API and real-time communication layer for the Real-Time-News-Agent system. It exposes REST and WebSocket endpoints for:
+## Features
 
-- Searching and retrieving news articles based on user queries.
-- Enabling real-time chat for interactive Q&A and summarization.
-- Managing authentication and secure access via JWT tokens.
+- **Real-time News Ingestion**: Automated pipeline that continuously fetches and indexes news articles
+- **Semantic Search**: Vector-based search using Pinecone for intelligent article retrieval
+- **AI-Powered Chat**: Integration with Google Gemini for contextual conversations about news
+- **Caching System**: Smart caching for headlines to reduce API calls and improve performance
+- **Scalable Architecture**: Microservice design with separate API and ingestion services
 
-The service integrates with a vector database (Pinecone) for semantic search and leverages a language model (e.g., Gemini) to generate high-quality summaries and answers.
+## System Architecture
 
----
-
-## System Design
-
-### High-Level Architecture
-
-```mermaid
-flowchart TD
-    User["User / Frontend Client"]
-    subgraph API Service
-        REST["REST API<br/>/api/v1/news/search"]
-        WS["WebSocket<br/>/ws/chat"]
-        Auth["JWT Authentication"]
-        Schemas["Pydantic Schemas"]
-        Logger["Logger"]
-    end
-    Pinecone["Pinecone Vector DB"]
-    Gemini["Language Model<br/>(e.g., Gemini)"]
-    NewsDB["News Article Storage"]
-
-    User -- HTTP/WS --> REST
-    User -- HTTP/WS --> WS
-    REST -- Query --> Pinecone
-    REST -- Summarize --> Gemini
-    REST -- Log --> Logger
-    WS -- Real-time Q&A --> Gemini
-    WS -- Log --> Logger
-    Pinecone -- Retrieve --> NewsDB
-    REST -- Validate --> Schemas
-    WS -- Validate --> Schemas
-    REST -- Auth --> Auth
-    WS -- Auth --> Auth
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   API Service    │    │ Ingestion       │
+│   Application   │◄──►│   (FastAPI)      │    │ Worker          │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                              │                        │
+                              ▼                        ▼
+                       ┌──────────────────┐    ┌──────────────────┐
+                       │   Pinecone       │    │   NewsAPI        │
+                       │   Vector DB      │◄───│   Service        │
+                       └──────────────────┘    └──────────────────┘
+                              │
+                              ▼
+                       ┌──────────────────┐
+                       │   Google Gemini  │
+                       │   AI Service     │
+                       └──────────────────┘
 ```
 
-### Component Breakdown
+##  Quick Start
 
-- **User/Frontend Client:** Interacts with the backend via REST and WebSocket endpoints.
-- **API Service:** Built with FastAPI, it handles all HTTP and WebSocket requests, authentication, validation, and logging.
-- **Pinecone Vector DB:** Stores and indexes news articles for fast semantic search.
-- **Language Model (Gemini):** Generates summaries and answers based on user queries and retrieved articles.
-- **News Article Storage:** Persistent storage for ingested news articles.
-- **Logger:** Centralized logging for monitoring and debugging.
+### Prerequisites
 
-### Flow
+- Python 3.8+
+- Conda environment (recommended)
+- API Keys:
+  - NewsAPI key
+  - Pinecone API key
+  - Google Gemini API key
 
-1. **User Query:** The user sends a search or chat query via REST or WebSocket.
-2. **Authentication:** The service validates the JWT token.
-3. **Semantic Search:** The query is used to search the Pinecone vector database for relevant articles.
-4. **Language Model:** The most relevant articles are passed to the language model to generate a summary or answer.
-5. **Response:** The result is returned to the user in real time.
-6. **Logging:** All interactions are logged for monitoring and analysis.
+### Environment Setup
 
----
+1. **Clone and setup environment:**
+```bash
+git clone https://github.com/harsh23exe/Real-Time-News-Agent.git
+cd Real-Time-News-Agent
+conda create -n news python=3.8
+conda activate news
+```
+
+2. **Install dependencies:**
+```bash
+# Both API Service && Ingestion Service
+pip install -r requirements.txt
+```
+
+3. **Configure environment variables:**
+```bash
+# Create .env files in both api-service/ and ingestion-worker/
+NEWS_API_KEY=your_news_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_HOST=your_pinecone_host
+PINECONE_INDEX_NAME=your_index_name
+GOOGLE_API_KEY=your_gemini_api_key
+```
+
+### Running the Services
+
+1. **Start the API Service:**
+```bash
+cd api-service
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+2. **Run the Ingestion Pipeline:**
+```bash
+cd ingestion-worker
+python run_pipeline.py --mode headlines --country us --category technology
+```
 
 ## API Endpoints
 
-### 1. `POST /api/v1/news/search`
+### News Search
+```http
+POST /api/v1/news/search
+Content-Type: application/json
 
-- **Description:** Search news articles by user query.
-- **Request:**
-  ```json
-  { "query": "string", "limit": 10 }
-  ```
-- **Response:**
-  ```json
-  {
-    "results": [
-      { "title": "string", "url": "string", "summary": "string", "published_at": "ISO8601 timestamp" }
-    ]
-  }
-  ```
-- **Errors:**
-  - `400`: Invalid input
-  - `500`: Server error
-- **Authentication:** JWT in `Authorization` header
+{
+  "query": "artificial intelligence",
+  "limit": 10
+}
+```
 
----
+### Top Headlines
+```http
+GET /api/v1/news/headlines?country=us&category=technology&limit=10
+```
 
-### 2. `ws://<host>/ws/chat`
+### AI Chat
+```http
+POST /api/v1/chat
+Content-Type: application/json
 
-- **Description:** Real-time chat for user queries and bot responses.
-- **Connection:**
-  - JWT token as query param or header
-- **Message Format:**
-  ```json
-  { "type": "user_message", "content": "string" }
-  ```
-- **Response Format:**
-  ```json
-  { "type": "bot_response", "content": "string" }
-  ```
-- **Error Format:**
-  ```json
-  { "type": "error", "message": "Details" }
-  ```
+{
+  "content": "What are the latest developments in AI?",
+  "chat_history": [],
+  "selected_news_article": "optional article context"
+}
+```
 
----
+### Health Check
+```http
+GET /health
+```
 
-## General Notes
+## Ingestion Pipeline
 
-- **Authentication:** All endpoints require JWT authentication.
-- **Error Handling:** Consistent JSON error format:
-  ```json
-  { "error": "InvalidRequest", "message": "Details about the error." }
-  ```
-- **Schemas:** All requests and responses are validated using Pydantic models.
-- **Testing:** Unit tests are written using FastAPI’s TestClient and are located in `api-service/tests/`.
-- **Documentation:** OpenAPI docs are auto-generated and should be kept up to date.
-- **Collaboration:** Always confirm request/response formats with frontend developers before release.
+The ingestion worker continuously fetches news articles and indexes them in Pinecone for semantic search:
 
----
+### Pipeline Modes
 
-For more details on endpoint flows and integration, see `api-service/flow.md` and `api-service/ENDPOINTS.md`.
+- **Headlines Mode**: Fetch top headlines by country/category
+- **Topic Mode**: Search articles by specific topics
+- **Domain Mode**: Fetch from specific news domains
+- **Batch Mode**: Process multiple topics efficiently
+
+### Example Usage
+
+```bash
+# Fetch technology headlines
+python run_pipeline.py --mode headlines --country us --category technology
+
+# Search for AI-related articles
+python run_pipeline.py --mode topic --topics "artificial intelligence"
+
+# Batch process multiple topics
+python run_pipeline.py --mode batch --topics "climate change" "renewable energy"
+```
+
+## Deployment
+
+```bash
+# API Service
+cd api-service
+uvicorn main:app --reload
+
+# Ingestion Worker (scheduled)
+cd ingestion-worker
+python run_pipeline.py --mode headlines
+```
+
+### Automated Daily Data Ingestion
+
+Set up crontab to automatically feed data daily using the provided script:
+
+```bash
+# Make the script executable
+chmod +x ingestion-worker/script.sh
+
+# Edit crontab to run daily at 6 AM
+crontab -e
+
+# Add this line to run daily at 6:00 AM
+0 6 * * * /path/to/Real-Time-News-Agent/ingestion-worker/script.sh >> /path/to/logs/cron.log 2>&1
+```
+
+## License
+
+This project is part of the Real-Time News Agent system. See project documentation for licensing details.

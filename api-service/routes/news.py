@@ -60,7 +60,7 @@ def fetch_records(request: NewsFetchRequest):
     )
 
 @news_router.get("/headlines", response_model=NewsSearchResponse)
-def get_top_headlines(country: str = 'us', category: str = 'technology', limit: int = 10):
+def get_top_headlines(country: str = 'us', category: str = 'technology', limit: int = 20):
     cache = HeadlinesCache()
     
     # Clear old cache files

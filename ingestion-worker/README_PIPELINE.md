@@ -8,15 +8,12 @@ The `NewsPipeline` class orchestrates the entire process of:
 1. Fetching news articles from NewsAPI
 2. Processing and preparing article text for vectorization
 3. Uploading articles to Pinecone vector database with metadata
-4. Providing comprehensive logging and error handling
 
 ## Features
 
 - **Multiple Ingestion Modes**: Topic-based, headlines, domain-specific, and batch processing
 - **Comprehensive Metadata**: Stores article metadata including title, description, URL, source, author, and timestamps
-- **Error Handling**: Robust error handling with detailed logging
 - **Batch Processing**: Process multiple topics efficiently
-- **Status Monitoring**: Check pipeline and service status
 
 ## NewsAPI Date Constraint
 
@@ -188,41 +185,6 @@ Articles processed: 14
 Articles failed: 1
 Timestamp: 2024-01-01T12:00:00
 ```
-
-## Dependencies
-
-The pipeline requires the following services to be properly configured:
-
-1. **NewsAPI Service**: Handles fetching news articles
-2. **Pinecone Service**: Handles vector database operations
-3. **Configuration**: Environment variables and settings
-4. **Logging**: Structured logging for monitoring
-
-## Monitoring
-
-The pipeline provides several monitoring capabilities:
-
-- **Status Checks**: Verify both NewsAPI and Pinecone connectivity
-- **Processing Statistics**: Track articles fetched, processed, and failed
-- **Timestamps**: Track when processing occurred
-- **Detailed Logs**: Comprehensive logging for debugging
-
-## Best Practices
-
-1. **Rate Limiting**: Be mindful of NewsAPI rate limits
-2. **Error Handling**: Always check the success field in responses
-3. **Resource Cleanup**: Call `pipeline.close()` when done
-4. **Monitoring**: Regularly check pipeline status
-5. **Batch Processing**: Use batch mode for multiple topics to improve efficiency
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Missing API Keys**: Ensure all required environment variables are set
-2. **Network Issues**: Check connectivity to NewsAPI and Pinecone
-3. **Rate Limits**: Monitor NewsAPI usage to avoid rate limiting
-4. **Pinecone Errors**: Verify Pinecone index configuration and permissions
 
 ### Debug Mode
 
