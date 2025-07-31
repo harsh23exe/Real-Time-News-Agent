@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from middleware.request_logging import RequestLoggingMiddleware
 from utils.logger import logger
 
@@ -32,6 +33,12 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Real-Time News Agent API is shutting down...")
+
+# Root endpoint that redirects to health check
+@app.get("/")
+async def root():
+    """Root endpoint that redirects to health check"""
+    return RedirectResponse(url="/health")
 
 # Import and include routers (to be created)
 from routes.news import news_router
