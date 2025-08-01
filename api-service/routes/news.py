@@ -102,6 +102,7 @@ def get_top_headlines(country: str = 'us', category: str = 'technology', limit: 
             
             news_articles = []
             headlines_for_cache = []
+            pinecone_records = []  # Batch records for Pinecone
             
             for article in article_list[:20]:  # Limit to 20 headlines max
                 # Generate ID similar to the ingestion pipeline
@@ -121,8 +122,8 @@ def get_top_headlines(country: str = 'us', category: str = 'technology', limit: 
                 news_articles.append(NewsArticle(**article_data))
                 headlines_for_cache.append(article_data)
                 
-                # Store in Pinecone
-                try:
+                # Prepare record for batch Pinecone storage
+                if Config.should_use_external_services():
                     article_text = f"{article.get('title', '')} {article.get('description', '')}"
                     metadata = {
                         'source_type': f"headlines_{country}",
@@ -140,20 +141,24 @@ def get_top_headlines(country: str = 'us', category: str = 'technology', limit: 
                     if category:
                         metadata['category'] = category
                     
-                    # Store in Pinecone
-                    result = pinecone.upsert_text(
-                        text=article_text.strip(),
-                        metadata=metadata,
-                        record_id=record_id
-                    )
-                    
+                    pinecone_records.append({
+                        'id': record_id,
+                        'text': article_text.strip(),
+                        'metadata': metadata
+                    })
+            
+            # Batch store in Pinecone (single API call instead of 20)
+            if pinecone_records and Config.should_use_external_services():
+                try:
+                    result = pinecone.upsert_batch(pinecone_records)
                     if result.get('success'):
-                        logger.debug(f"Successfully stored headline in Pinecone: {record_id}")
+                        logger.info(f"Successfully batch stored {result.get('count', 0)} headlines in Pinecone")
                     else:
-                        logger.error(f"Failed to store headline in Pinecone: {result.get('error')}")
-                    
+                        logger.error(f"Failed to batch store headlines in Pinecone: {result.get('error')}")
                 except Exception as e:
-                    logger.error(f"Error storing headline in Pinecone: {e}")
+                    logger.error(f"Error batch storing headlines in Pinecone: {e}")
+            elif not Config.should_use_external_services():
+                logger.info(f"Skipping Pinecone storage in production environment (DEPLOYMENT={Config.DEPLOYMENT})")
             
             # Cache the headlines
             cache.save_headlines(headlines_for_cache, country, category)

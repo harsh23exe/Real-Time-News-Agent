@@ -65,6 +65,51 @@ class PineconeService:
                 'error': str(e)
             }
 
+    def upsert_batch(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Upsert multiple records in a single batch operation to Pinecone"""
+        try:
+            if not records:
+                return {'success': True, 'count': 0, 'message': 'No records to upsert'}
+            
+            formatted_records = []
+            for record in records:
+                # Ensure required fields exist
+                record_id = record.get('id') or str(uuid.uuid4())
+                text = record.get('text', '')
+                metadata = record.get('metadata', {})
+                
+                # Add text length to metadata
+                metadata['text_length'] = len(text)
+                
+                formatted_record = {
+                    "_id": record_id,
+                    "text": text,
+                    **metadata
+                }
+                formatted_records.append(formatted_record)
+            
+            # Single batch API call to Pinecone
+            self.index.upsert_records(
+                namespace=self.namespace,
+                records=formatted_records
+            )
+            
+            logger.info(f"Successfully batch upserted {len(formatted_records)} records")
+            
+            return {
+                'success': True,
+                'count': len(formatted_records),
+                'message': f'Successfully upserted {len(formatted_records)} records'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error batch upserting records: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'count': 0
+            }
+
     def search_similar(self, query_text: str, top_k: int = 10, filter_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         try:
             search_payload = {

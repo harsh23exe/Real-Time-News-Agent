@@ -4,6 +4,7 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from utils.logger import logger
+from config import Config
 
 class HeadlinesCache:
     """Manages caching of daily headlines to avoid repeated NewsAPI calls"""
@@ -12,27 +13,36 @@ class HeadlinesCache:
         self.cache_dir = Path(cache_dir)
         self.cache_file = self.cache_dir / "headlines_cache.json"
         
-        # Try to create cache directory and test write permissions, fall back to in-memory if not possible
-        try:
-            self.cache_dir.mkdir(exist_ok=True)
-            
-            # Test if we can actually write to the directory
-            test_file = self.cache_dir / "test_write.tmp"
+        # Check deployment environment and write permissions
+        can_write_files = Config.should_use_external_services()
+        
+        if can_write_files:
+            # Try to create cache directory and test write permissions
             try:
-                with open(test_file, 'w') as f:
-                    f.write("test")
-                test_file.unlink()  # Clean up test file
-                self.use_file_cache = True
-                logger.info("Using file-based cache")
+                self.cache_dir.mkdir(exist_ok=True)
+                
+                # Test if we can actually write to the directory
+                test_file = self.cache_dir / "test_write.tmp"
+                try:
+                    with open(test_file, 'w') as f:
+                        f.write("test")
+                    test_file.unlink()  # Clean up test file
+                    self.use_file_cache = True
+                    logger.info(f"Using file-based cache (DEPLOYMENT={Config.DEPLOYMENT})")
+                except (OSError, PermissionError):
+                    self.use_file_cache = False
+                    self.memory_cache = {}
+                    logger.info(f"File write failed, using in-memory cache (DEPLOYMENT={Config.DEPLOYMENT})")
+                    
             except (OSError, PermissionError):
                 self.use_file_cache = False
                 self.memory_cache = {}
-                logger.info("Using in-memory cache (serverless environment detected)")
-                
-        except (OSError, PermissionError):
+                logger.info(f"Cache directory creation failed, using in-memory cache (DEPLOYMENT={Config.DEPLOYMENT})")
+        else:
+            # Production environment - use in-memory cache only
             self.use_file_cache = False
             self.memory_cache = {}
-            logger.info("Using in-memory cache (serverless environment detected)")
+            logger.info(f"Using in-memory cache (production mode, DEPLOYMENT={Config.DEPLOYMENT})")
     
     def get_cache_filename(self, country: str, category: Optional[str] = None) -> str:
         """Generate cache filename based on country and category"""
